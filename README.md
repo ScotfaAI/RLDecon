@@ -1,4 +1,5 @@
 # Richardson lucy deconvolution for ImageJ 5D tifs
+Authors: Scott Brooks and Sara Toral Perez
 
 ## Requirements
 - It should take in imageJ tifs not ome.tiffs

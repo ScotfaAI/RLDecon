@@ -198,7 +198,7 @@ kernel = ndimage.gaussian_filter(kernel, sigma=[np.sqrt(psf[2,2])/3.08,np.sqrt(p
 ############
 
 data = np.copy(dat) 
-res = np.zeros(data.shape)
+res = np.zeros(data.shape) 
 ndim = 3 #data.ndim 
 algo = fd_restoration.RichardsonLucyDeconvolver(ndim, pad_mode='none', pad_min=[16,16,16]).initialize() 
 tmp = algo.run(fd_data.Acquisition(data=data[0], kernel=kernel), niter=2)

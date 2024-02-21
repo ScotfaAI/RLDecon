@@ -13,7 +13,13 @@ Authors: Scott Brooks and Sara Toral Perez
 ## Advanced
 - Choose between Jonathan vs Scott fitting vs raw PSF
 - threading
+- output at every 5 iterations
+- output ome.tiff as well
 
 ### Averaging specify a folder
 - Raw PSF Averaging
 - sigma averaging
+
+
+to get new z spacing after deskewing on warwick llsm, spacing*cos(57.2)
+

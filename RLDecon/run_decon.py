@@ -29,53 +29,51 @@ def get_kernel(psf, z_spacing = 2.705078):
     kernel = ndimage.gaussian_filter(kernel, sigma=[np.sqrt(psf[2,2])/z_spacing,np.sqrt(psf[0,0]),np.sqrt(psf[1,1])])
     return kernel
 
+def run_3d_decon(timepoint, kernel, niter, algo):
+    nonzero = timepoint[np.where(timepoint>0)]
+    bkgd_mode = stats.mode(nonzero)[0][0]
+    bkgd_std = stats.tstd(nonzero)
+    indz,indy,indx = np.where(timepoint==0)
+    timepoint[indz, indy, indx] = bkgd_mode + bkgd_std*np.random.randn(len(indz))
+    return algo.run(fd_data.Acquisition(data=timepoint, kernel=kernel), niter=niter).data
 
-def run_5d_decon(input_file_str, dat, mdata, psf488, psf640, z_spacing, niter, pad_amount):
-    # print(dat.shape)
-    kernel488 = get_kernel(psf488, z_spacing)
-    kernel640 = get_kernel(psf640, z_spacing)
+def run_5d_decon(input_file_str, dat, mdata, psfs, z_spacing, niter, pad_amount, channels):
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # FATAL
+    logging.getLogger('tensorflow').setLevel(logging.FATAL)
+    print(dat.shape)
     data = np.copy(dat) 
     res = np.zeros(data.shape)
+
+    if len(data.shape) == 3:
+        res = np.expand_dims(res, 0)
+        data = np.expand_dims(data, 0)
+
+    
+    kernel488 = get_kernel(psfs[0], z_spacing)
+    if channels == 1:
+        
+        
+        if len(data.shape) == 5:
+            res = res[:, :, 0]
+        res = np.expand_dims(res, 2)
+        data = np.expand_dims(data, 2)
+        
+    
+    if channels == 2:
+        kernel640 = get_kernel(psfs[1], z_spacing)
+        
+    
     ndim = 3 #data.ndim 
     algo = fd_restoration.RichardsonLucyDeconvolver(ndim, pad_mode='none', pad_min=[pad_amount,pad_amount,pad_amount]).initialize() 
     
     for i,image in tqdm(enumerate(data), total=data.shape[0], desc='Deconvolving: '):
-        # print(image.shape)
-        tt488 = image[:,0]
-        nonzero = tt488[np.where(tt488>0)]
-        bkgd_mode = stats.mode(nonzero)[0][0]
-        bkgd_std = stats.tstd(nonzero)
-        indz,indy,indx = np.where(tt488==0)
-        tt488[indz, indy, indx] = bkgd_mode + bkgd_std*np.random.randn(len(indz))
-        # Note that deconvolution initialization is best kept separate from 
-        # execution since the "initialize" operation corresponds to creating 
-        # a TensorFlow graph, which is a relatively expensive operation and 
-        # should not be repeated across iterations if deconvolving more than 
-        # one image
-        res[i, :, 0] = algo.run(fd_data.Acquisition(data=tt488, kernel=kernel488), niter=niter).data
+        res[i, :, 0] = run_3d_decon(image[:,0], kernel488, niter, algo)  
+        if channels ==2:
+            res[i, :, 1] = run_3d_decon(image[:,0], kernel640, niter, algo)
     
-        tt640 = image[:,1]
-        nonzero = tt640[np.where(tt640>0)]
-        bkgd_mode = stats.mode(nonzero)[0][0]
-        bkgd_std = stats.tstd(nonzero)
-        indz,indy,indx = np.where(tt640==0)
-        tt640[indz, indy, indx] = bkgd_mode + bkgd_std*np.random.randn(len(indz))
-        # Note that deconvolution initialization is best kept separate from 
-        # execution since the "initialize" operation corresponds to creating 
-        # a TensorFlow graph, which is a relatively expensive operation and 
-        # should not be repeated across iterations if deconvolving more than 
-        # one image
-        res[i, :, 1] = algo.run(fd_data.Acquisition(data=tt640, kernel=kernel640), niter=niter).data
-    
-    suffix = f"_scottdecon_niter{niter}_padding{pad_amount}.tif"
+    suffix = f"_scottdecon_niter{niter}_padding{pad_amount}_channels{channels}.tif"
     output_file_str = input_file_str.replace(".tif", suffix)
-    ####################
-    # print('Done. Now writing to file\n')
-    # # create numpy array with correct order
-    # if is_single_time_pt:
-    #     img5d = np.expand_dims(np.expand_dims(res, axis=1), axis=0) 
-    # else:
-    #     img5d = np.expand_dims(res, axis=1)
-    # # write file and save OME-XML as description
+    mdata['channels'] = channels
+
     tifffile.imwrite(output_file_str, res.astype(np.uint16), imagej = True, metadata=mdata)
     print('All finished\n')

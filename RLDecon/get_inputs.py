@@ -44,71 +44,107 @@ def choose_image_file(root, default_folder = '../', title_message ='Open an imag
     return filepath
 
 class MultipleInputFileDialog(simpledialog.Dialog):
-    def __init__(self, master, title="Input", defaults=None, **kwargs):
+    def __init__(self, root, title="Input", defaults=None, **kwargs):
         if defaults is None:
-            defaults = {'image_file': 'Z:/Shared243/storal/', 'csv_488': 'Z:/Shared243/storal/', 'csv_640': 'Z:/Shared243/storal/'}
+            defaults = {'image_file': '', 'csv_ch1': '', 'csv_ch2': 'none', 'channels':1}
+        self.root = root
 
-        self.root = master
         self.defaults = defaults
-        super().__init__(master, title=title, **kwargs)
+        self.channel_mode = tk.IntVar(value=defaults['channels'])  # Default to 1 Channel
+        
+        super().__init__(root, title=title, **kwargs)
+        
+
+    def make_layout_flexible(self):
+        # Configure the rows and columns to be flexible
+        for i in range(5):  # Assuming you might have up to 4 rows; adjust as necessary
+            self.master.grid_rowconfigure(i, weight=1)
+        for j in range(3):  # Assuming up to 3 columns (label, entry, button)
+            self.master.grid_columnconfigure(j, weight=1)
 
     def body(self, master):
-        # Existing input fields setup...
-        
-        # Additional setup for file selection
-        tk.Label(master, text="Image file:").grid(row=0, column=0, sticky="w")
-        self.image_file_entry = tk.Entry(master)
+        self.master = master
+        default_folder = str(self.defaults['image_file'])
+        tk.Label(self.master, text="Image file:").grid(row=0, column=0, sticky="w")
+        self.image_file_entry = tk.Entry(self.master, width=50)
         self.image_file_entry.grid(row=0, column=1, sticky="ew")
-        self.image_file_entry.insert(0, str(self.defaults['image_file']))
-        tk.Button(master, text="Select", command=self.select_image_file).grid(row=0, column=2)
+        self.image_file_entry.insert(0, default_folder)
+        tk.Button(self.master, text="Select", command=lambda: self.select_file(default_folder,self.image_file_entry, False)).grid(row=0, column=2)
 
-        tk.Label(master, text="psf488 CSV file:").grid(row=1, column=0, sticky="w")
-        self.csv_488_entry = tk.Entry(master)
-        self.csv_488_entry.grid(row=1, column=1, sticky="ew")
-        self.csv_488_entry.insert(0, str(self.defaults['csv_488']))
-        tk.Button(master, text="Select", command=self.select_csv_488).grid(row=1, column=2)
+        # Radio buttons for channel selection
+        tk.Radiobutton(self.master, text="1 Channel", variable=self.channel_mode, value=1, command=lambda: self.update_csv_fields()).grid(row=1, column=0, sticky="w")
+        tk.Radiobutton(self.master, text="2 Channels", variable=self.channel_mode, value=2, command=lambda: self.update_csv_fields()).grid(row=1, column=1, sticky="w")
 
-        tk.Label(master, text="psf640 CSV file:").grid(row=2, column=0, sticky="w")
-        self.csv_640_entry = tk.Entry(master)
-        self.csv_640_entry.grid(row=2, column=1, sticky="ew")
-        self.csv_640_entry.insert(0, str(self.defaults['csv_640']))
-        tk.Button(master, text="Select", command=self.select_csv_640).grid(row=2, column=2)
+        # Initially create one CSV entry field; adjust based on mode
+        self.csv_entry_widgets = []
+        self.csv_extra_widgets = []
+        self.update_csv_fields()
+        # self.make_layout_flexible(master)
 
-
-        # Ensure the dialog is wide enough to fit the file paths
-        master.grid_columnconfigure(1, weight=1)
-
-    def select_image_file(self):
-        filepath = choose_image_file(self.root, default_folder='Z:/Shared243/storal/', title_message='Open an image file', csv=False)
+    def select_file(self,default_folder,  entry_widget, csv):
+        filepath = choose_image_file(self.master, default_folder= default_folder, title_message='Select a file', csv=csv)
         if filepath:
-            self.image_file_entry.delete(0, tk.END)
-            self.image_file_entry.insert(0, filepath)
+            entry_widget.delete(0, tk.END)
+            entry_widget.insert(0, filepath)
 
-    def select_csv_488(self):
-        filepath = choose_image_file(self.root, default_folder='Z:/Shared243/storal/', title_message='Select a CSV file', csv=True)
-        if filepath:
-            self.csv_488_entry.delete(0, tk.END)
-            self.csv_488_entry.insert(0, filepath)
+    def update_csv_fields(self ):
+        # Clear existing CSV fields and secondary widgets
+        for widget in self.csv_entry_widgets:
+            widget.grid_forget()
 
-    def select_csv_640(self):
-        filepath = choose_image_file(self.root, default_folder='Z:/Shared243/storal/', title_message='Select a CSV file', csv=True)
-        if filepath:
-            self.csv_640_entry.delete(0, tk.END)
-            self.csv_640_entry.insert(0, filepath)
+        for widget in self.csv_extra_widgets:
+            widget.grid_forget()
+            
+        self.csv_entry_widgets.clear()
+        self.csv_extra_widgets.clear()
+        
+        print(self.channel_mode.get())
+        # Depending on the channel mode, create appropriate CSV file fields
+        if self.channel_mode.get() == 1:
+            self.create_csv_field("CSV file:", 2, self.defaults['csv_ch1'])
+        elif self.channel_mode.get() == 2:
+            self.create_csv_field("psf488 CSV file:", 2, self.defaults['csv_ch1'])
+            self.create_csv_field("psf640 CSV file:", 3, self.defaults['csv_ch2'])
+
+    def create_csv_field(self, label_text, row, default_value):
+        # print(f'Creating field at row {row} with default value "{default_value}"')
+        label = tk.Label(self.master, text=label_text)
+        label.grid(row=row, column=0, sticky="w")
+        # print(f'Label grid info: {label.grid_info()}')
+        
+        entry = tk.Entry(self.master)
+        entry.grid(row=row, column=1, sticky="ew")
+        entry.insert(0, str(default_value))
+        # print(f'Entry grid info: {entry.grid_info()}')
+    
+        button = tk.Button(self.master, text="Select", command=lambda: self.select_file(label_text, entry, True))
+        button.grid(row=row, column=2)
+        # print(f'Button grid info: {button.grid_info()}')
+
+        self.csv_extra_widgets.append(label)
+        self.csv_entry_widgets.append(entry)
+        self.csv_extra_widgets.append(button)
+
 
     def apply(self):
-        # Existing apply method to handle other inputs...
+
         self.result = {}
         invalid = False
         try:
-            self.result['image_file'] = self.image_file_entry.get()
-            self.result['csv_488'] = self.csv_488_entry.get()
-            self.result['csv_640'] = self.csv_640_entry.get()
-            
+            self.result = {'image_file': self.image_file_entry.get()}
+            self.result['channels'] = self.channel_mode.get()
+            if self.channel_mode.get() == 1:
+                self.result['csv_ch1'] = self.csv_entry_widgets[0].get()
+            elif self.channel_mode.get() == 2:
+                self.result['csv_ch1'] = self.csv_entry_widgets[0].get()
+                self.result['csv_ch2'] = self.csv_entry_widgets[1].get()
         except ValueError:
             messagebox.showwarning("Invalid input", "Please enter valid file paths.")
             self.result = None
 
+
+            
+        
 class MultipleInputNumericDialog(simpledialog.Dialog):
     def __init__(self, master, title="Input", defaults=None, **kwargs):
         if defaults is None:
@@ -154,7 +190,7 @@ class MultipleInputNumericDialog(simpledialog.Dialog):
 
 def get_multiple_file_inputs(master, title, defaults):
     dialog = MultipleInputFileDialog(master, title, defaults=defaults)
-    return dialog.result
+    return dialog.result, dialog.root
 
 def get_multiple_numeric_inputs(master, title, defaults):
     dialog = MultipleInputNumericDialog(master, title, defaults=defaults)
@@ -168,18 +204,29 @@ def get_inputs():
     root = tk.Tk()
     root.withdraw()  # Optionally hide the root window
     valid = False
+    psfs = []
+    
     while(not valid):
         try:
+            default_inputs = { 'image_file': 'Z:/Shared243/storal/', 'csv_ch1': 'Z:/Shared243/storal/', 'csv_ch2': 'Z:/Shared243/storal/', 'channels':2}
+            file_inputs, root = get_multiple_file_inputs(root, "File Inputs", default_inputs)
+            if file_inputs is None:
+                print('Cancelled.')
+                root.destroy()
+                return
             
-            file_defaults = { 'image_file': 'Z:/Shared243/storal/', 'csv_488': 'Z:/Shared243/storal/', 'csv_640': 'Z:/Shared243/storal/'}
-            file_inputs = get_multiple_file_inputs(root, "File Inputs", file_defaults)
+            channels = int(file_inputs['channels'])
             
             input_file_str = file_inputs['image_file']
-            bead488_image_file_str = file_inputs['csv_488']
-            bead640_image_file_str = file_inputs['csv_640']
+
             
-            psf488 = np.genfromtxt(bead488_image_file_str, delimiter=',')
-            psf640 = np.genfromtxt(bead640_image_file_str, delimiter=',')
+            psf_ch1_file_str = file_inputs['csv_ch1']
+            psfs.append(np.genfromtxt(psf_ch1_file_str, delimiter=','))
+
+            if channels == 2:
+                psf_ch2_file_str = file_inputs['csv_ch2']
+                psfs.append(np.genfromtxt(psf_ch2_file_str, delimiter=','))
+                
             with tifffile.TiffFile(input_file_str) as tif:
                     mdata = tif.imagej_metadata
                     dat = tif.asarray()
@@ -188,14 +235,22 @@ def get_inputs():
         except OSError as e:
                 # Handle the error (e.g., log it, inform the user)
                 messagebox.showerror("Error", f"Failed to open file: {e}")
+        except KeyError:
+            # Handle KeyError here
+            print("A Value was not selected.")
     
     numeric_defaults = {'z_spacing': mdata['spacing']*10, 'niter': 10, 'pad_amount': 16}
     numeric_inputs = get_multiple_numeric_inputs(root, "Numeric Inputs", numeric_defaults)
+    if numeric_inputs is None:
+        print('Cancelled.')
+        root.destroy()
+        return
+    
     z_spacing = numeric_inputs['z_spacing']
     niter = numeric_inputs['niter']
     pad_amount = numeric_inputs['pad_amount']
     
     root.destroy()
-    return input_file_str, dat, mdata, psf488, psf640, z_spacing, niter, pad_amount
+    return [input_file_str, dat, mdata, psfs, z_spacing, niter, pad_amount, channels]
 
 

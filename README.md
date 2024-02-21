@@ -23,3 +23,5 @@ Authors: Scott Brooks and Sara Toral Perez
 
 to get new z spacing after deskewing on warwick llsm, spacing*cos(57.2)
 
+To run currently boot up flowdec anaconda
+python C:\Users\u1604360\Documents\GitHub\RLDecon\RLDecon.py

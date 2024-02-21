@@ -21,6 +21,7 @@ from tqdm import tqdm
 
 def get_kernel(psf, z_spacing = 2.705078):
     kernel_shape = (51,51,51)
+    kernel_shape = (25,25,25)
     kernel = np.zeros(kernel_shape) #(51,51,51)) #Note may not work if this size is too big relative to the image
     for offset in [0,1]:
         kernel[tuple((np.array(kernel.shape) - offset) // 2)] = 1

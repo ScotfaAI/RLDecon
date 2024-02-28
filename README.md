@@ -15,7 +15,7 @@ Open anaconda prompt
 
 `python C:\Users\u1604360\Documents\GitHub\RLDecon\RLDecon.py`
 
-## Requirements
+## Project Requirements
 - It should take in imageJ tifs not ome.tiffs - DONE
 - It should take in 2 channel images and produce a deconvolution as a single tif - DONE
 - Add a file chooser - DONE

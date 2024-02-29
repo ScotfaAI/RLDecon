@@ -51,7 +51,7 @@ def main():
         # print("Processing PSF...")
         # Take upper left 16x16 pixels to estimate noise level and create appropriate fake noise
         # noisy_region = psf_temp[0:16, 0:16, 0:16]
-    # psf = np.random.normal(np.mean(noisy_region), np.std(noisy_region), image.shape)
+        # psf = np.random.normal(np.mean(noisy_region), np.std(noisy_region), image.shape)
     # else:
     
     
@@ -93,7 +93,7 @@ def main():
     
     # new_psf now contains the PSF data interpolated to the new z-spacing
     print(f"New PSF shape: {new_psf.shape}")
-
+    psf_temp = new_psf
 
     psf = np.zeros(image.shape)
     

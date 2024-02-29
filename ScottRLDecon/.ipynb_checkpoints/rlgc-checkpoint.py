@@ -7,6 +7,7 @@
 # Developed in collaboration with Andy York (Calico), Jan Becker (Oxford) and Craig Russell (EMBL EBI)
 
 import numpy as np
+from scipy.interpolate import interp1d
 import cupy as cp
 import timeit
 import tifffile
@@ -41,19 +42,61 @@ def main():
 
 	# Load and pad PSF if necessary
 	psf_temp = tifffile.imread(args.psf)
-
+    
 	# Add new z-axis if we have 2D data
 	if psf_temp.ndim == 2:
 		psf_temp = np.expand_dims(psf_temp, axis=0)
-
+    
 	# if (args.process_psf):
 		# print("Processing PSF...")
 		# Take upper left 16x16 pixels to estimate noise level and create appropriate fake noise
 		# noisy_region = psf_temp[0:16, 0:16, 0:16]
 		# psf = np.random.normal(np.mean(noisy_region), np.std(noisy_region), image.shape)
 	# else:
+    
+    
+    # Assuming original_psf is your original 3D PSF array with shape (101, 121, 121)
+    # For demonstration, let's create a placeholder for the original PSF data
+    
+    original_psf = psf_temp
+
+    # original_psf = np.random.rand(101, 121, 121)  # Original shape
+    
+    # Original and target z spacings
+    original_z_spacing = 0.1
+    target_z_spacing = 0.271
+    
+    # Calculate the new number of z slices, rounded to nearest integer
+    original_z_slices = original_psf.shape[0]
+    z_spacing_ratio = target_z_spacing / original_z_spacing
+    new_z_slices = int(np.round(original_z_slices / z_spacing_ratio))
+    
+    # Create arrays of original and new z positions
+    original_z_positions = np.linspace(0, (original_z_slices - 1) * original_z_spacing, original_z_slices)
+    new_z_positions = np.linspace(0, (new_z_slices - 1) * target_z_spacing, new_z_slices)
+    
+    # Initialize the new PSF array with the new z dimension and same x, y dimensions
+    new_psf = np.zeros((new_z_slices, original_psf.shape[1], original_psf.shape[2]))
+    
+    # Loop through each x, y position
+    for x in range(original_psf.shape[1]):
+        for y in range(original_psf.shape[2]):
+            # Extract the z-axis data for the current x, y position
+            original_psf_z = original_psf[:, x, y]
+    
+            # Create an interpolation function for the current z-axis data
+            interp_function = interp1d(original_z_positions, original_psf_z, kind='cubic', fill_value="extrapolate")
+    
+            # Interpolate the data at the new z positions and store in the new PSF array
+            new_psf[:, x, y] = interp_function(new_z_positions)
+
+    
+    # new_psf now contains the PSF data interpolated to the new z-spacing
+    print(f"New PSF shape: {new_psf.shape}")
+
 
 	psf = np.zeros(image.shape)
+    
 	psf[:psf_temp.shape[0], :psf_temp.shape[1], :psf_temp.shape[2]] = psf_temp
 	for axis, axis_size in enumerate(psf_temp.shape):
 		psf = np.roll(psf, -int(axis_size / 2), axis=axis)

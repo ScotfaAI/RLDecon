@@ -53,8 +53,14 @@ def main():
         # noisy_region = psf_temp[0:16, 0:16, 0:16]
         # psf = np.random.normal(np.mean(noisy_region), np.std(noisy_region), image.shape)
     # else:
+    timepoint = image
+    nonzero = timepoint[np.where(timepoint>0)]
+    bkgd_mode = stats.mode(nonzero)[0][0]
+    bkgd_std = stats.tstd(nonzero)
+    indz,indy,indx = np.where(timepoint==0)
+    timepoint[indz, indy, indx] = bkgd_mode + bkgd_std*np.random.randn(len(indz))
     
-    
+    image = timepoint
     # Assuming original_psf is your original 3D PSF array with shape (101, 121, 121)
     # For demonstration, let's create a placeholder for the original PSF data
     

@@ -1,6 +1,6 @@
 import cupy as cp
 
-def richardson_lucy_deconvolution(image, psf, iterations, use_otf=True, use_regularization=True, regularization_constant=1e-2, use_cutoff=False, cutoff_frequency=0.5, convergence_ratio=0.25):
+def richardson_lucy_deconvolution(image, original_psf, iterations, use_otf=True, use_regularization=True, regularization_constant=1e-2, use_cutoff=False, cutoff_frequency=0.5, convergence_ratio=0.25):
     """
     Perform Richardson-Lucy deconvolution with options for direct PSF usage, regularization, and high-frequency cutoff.
 
@@ -18,6 +18,34 @@ def richardson_lucy_deconvolution(image, psf, iterations, use_otf=True, use_regu
     Returns:
     - CuPy array: the deconvolved image.
     """
+    # Original and target z spacings
+    original_z_spacing = 0.1
+    target_z_spacing = 0.271
+    
+    # Calculate the new number of z slices, rounded to nearest integer
+    original_z_slices = original_psf.shape[0]
+    z_spacing_ratio = target_z_spacing / original_z_spacing
+    new_z_slices = int(np.round(original_z_slices / z_spacing_ratio))
+    
+    # Create arrays of original and new z positions
+    original_z_positions = np.linspace(0, (original_z_slices - 1) * original_z_spacing, original_z_slices)
+    new_z_positions = np.linspace(0, (new_z_slices - 1) * target_z_spacing, new_z_slices)
+    
+    # Initialize the new PSF array with the new z dimension and same x, y dimensions
+    new_psf = np.zeros((new_z_slices, original_psf.shape[1], original_psf.shape[2]))
+    # Loop through each x, y position
+    for x in range(original_psf.shape[1]):
+        for y in range(original_psf.shape[2]):
+            # Extract the z-axis data for the current x, y position
+            original_psf_z = original_psf[:, x, y]
+    
+            # Create an interpolation function for the current z-axis data
+            interp_function = interp1d(original_z_positions, original_psf_z, kind='cubic', fill_value="extrapolate")
+    
+            # Interpolate the data at the new z positions and store in the new PSF array
+            new_psf[:, x, y] = interp_function(new_z_positions)
+    
+    
     if use_otf:
         # Convert the PSF to OTF if using the frequency domain approach
         otf = cp.fft.fftn(cp.fft.fftshift(psf), s=image.shape)

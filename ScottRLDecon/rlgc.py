@@ -105,8 +105,8 @@ def main():
 #     take csv
     kernel_shape = (51,51,51)
     kernel = np.zeros(kernel_shape)
-    fitted_psf_file_str "../average.csv"
-    g_psfs = np.genfromtxt(fitted_psf_file_str, delimiter=',')
+    fitted_psf_file_str = "../average.csv"
+    g_psf = np.genfromtxt(fitted_psf_file_str, delimiter=',')
     
     psf_temp = ndimage.gaussian_filter(kernel, sigma=[np.sqrt(g_psf[2,2])/2.71,np.sqrt(g_psf[0,0]),np.sqrt(g_psf[1,1])])
 

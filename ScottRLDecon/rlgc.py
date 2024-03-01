@@ -12,6 +12,7 @@ import cupy as cp
 import timeit
 import tifffile
 import argparse
+from scipy import ndimage, signal, stats
 
 rng = np.random.default_rng()
 

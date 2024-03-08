@@ -1,5 +1,4 @@
 import numpy as np
-import bioformats.omexml as ome
 import tifffile
 import sys
 import argparse
@@ -10,11 +9,11 @@ from math import floor, ceil
 from flowdec import data as fd_data
 from flowdec import psf as fd_psf
 from flowdec import restoration as fd_restoration
-from xml.etree import cElementTree as ElementTree
 from tqdm import tqdm
 import tensorflow as tf
 import tkinter as tk
 from tkinter import simpledialog, messagebox, filedialog
+from .utils import get_mdata
 
 
 def choose_image_file(root, default_folder = '../', title_message ='Open an image file', csv = False):
@@ -228,7 +227,11 @@ def get_inputs():
                 psfs.append(np.genfromtxt(psf_ch2_file_str, delimiter=','))
                 
             with tifffile.TiffFile(input_file_str) as tif:
-                    mdata = tif.imagej_metadata
+                    if 'ome.tif' in input_file_str:
+                        xml_data = tif.ome_metadata
+                        mdata = get_mdata(xml_data)
+                    else:
+                        mdata = tif.imagej_metadata
                     dat = tif.asarray()
             valid = True
             
@@ -238,8 +241,14 @@ def get_inputs():
         except KeyError:
             # Handle KeyError here
             print("A Value was not selected.")
+
+
+    if mdata is None:
+        spacing = 0.2705078
+    else:
+        spacing = mdata['spacing']
     
-    numeric_defaults = {'z_spacing': mdata['spacing']*10, 'niter': 10, 'pad_amount': 16}
+    numeric_defaults = {'z_spacing': spacing*10, 'niter': 10, 'pad_amount': 16}
     numeric_inputs = get_multiple_numeric_inputs(root, "Numeric Inputs", numeric_defaults)
     if numeric_inputs is None:
         print('Cancelled.')
@@ -249,6 +258,25 @@ def get_inputs():
     z_spacing = numeric_inputs['z_spacing']
     niter = numeric_inputs['niter']
     pad_amount = numeric_inputs['pad_amount']
+
+    if mdata is None:
+        print("No metadata found, generating metadata, please check")
+        frames = dat.shape[0]
+        slices = dat.shape[1]
+            
+        if (len(dat.shape) == 4 and channels > 1) or len(dat.shape) == 3:
+            frames = 1
+            slices = dat.shape[0]      
+        
+        mdata = {
+            'images': int(slices*frames*channels),
+            'slices': slices,
+            'frames': frames,
+            'hyperstack': True,
+            'unit': 'micron',
+            'spacing': z_spacing[0]/10,
+            'loop': False
+        }
     
     root.destroy()
     return [input_file_str, dat, mdata, psfs, z_spacing, niter, pad_amount, channels]

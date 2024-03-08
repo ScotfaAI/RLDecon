@@ -22,8 +22,5 @@ dependencies:
       - scikit-image==0.21.0
       - pillow==10.1.0
       - matplotlib==3.7.4
-      - h5py==3.10.0
-      - boto3==1.33.8
-      - python-bioformats==4.0.7
-      - python-javabridge==4.0.3
+      - tqdm
 prefix: E:\anaconda3\envs\flowdecimportnocuda

@@ -1,5 +1,4 @@
 import numpy as np
-import bioformats.omexml as ome
 import tifffile
 import sys
 import argparse
@@ -10,7 +9,6 @@ from math import floor, ceil
 from flowdec import data as fd_data
 from flowdec import psf as fd_psf
 from flowdec import restoration as fd_restoration
-from xml.etree import cElementTree as ElementTree
 from tqdm import tqdm
 import tensorflow as tf
 import tkinter as tk

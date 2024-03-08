@@ -1,0 +1,29 @@
+name: flowdecimportnocuda
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8.18
+  - pip
+  - ipython
+  - ipykernel
+  - jupyter
+  - numpy
+  - scipy
+  - matplotlib
+  - pillow
+  - h5py
+  - pip:
+      - flowdec==1.1.0
+      - tensorflow==2.10.1
+      - keras==2.10.0
+      - numpy==1.24.4
+      - scipy==1.10.1
+      - scikit-image==0.21.0
+      - pillow==10.1.0
+      - matplotlib==3.7.4
+      - h5py==3.10.0
+      - boto3==1.33.8
+      - python-bioformats==4.0.7
+      - python-javabridge==4.0.3
+prefix: E:\anaconda3\envs\flowdecimportnocuda

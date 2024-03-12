@@ -1,0 +1,2 @@
+python rlgc.py --input "../../../slide2_deskewed_t1.tif" --psf "../PSFs/averaged_psf.tif" --output "../../../slide2_deskewed_t1_ccavg_rlgc.tif" --max_iters 10 --rl_output "../../../slide2_deskewed_t1_ccavg_rlgc_rlonly.tif"
+

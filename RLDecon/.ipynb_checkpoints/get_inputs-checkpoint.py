@@ -232,6 +232,16 @@ def get_inputs():
                         mdata = get_mdata(xml_data)
                     else:
                         mdata = tif.imagej_metadata
+
+                    if tif.pages is not None:
+                        tags = tif.pages[0].tags
+                        y_res = tags['YResolution'].value
+                        x_res = tags['XResolution'].value
+                    else:
+                        # is 0.104 microns per pixel
+                        y_res = (9615384, 1000000)
+                        x_res = (9615384, 1000000)
+                        
                     dat = tif.asarray()
             valid = True
             
@@ -279,6 +289,6 @@ def get_inputs():
         }
     
     root.destroy()
-    return [input_file_str, dat, mdata, psfs, z_spacing, niter, pad_amount, channels]
+    return [input_file_str, dat, mdata, psfs, x_res, y_res, z_spacing, niter, pad_amount, channels]
 
 

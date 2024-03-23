@@ -2,7 +2,6 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 import numpy as np
-import bioformats.omexml as ome
 import tifffile
 import sys
 import argparse
@@ -15,7 +14,6 @@ from math import floor, ceil
 from flowdec import data as fd_data
 from flowdec import psf as fd_psf
 from flowdec import restoration as fd_restoration
-from xml.etree import cElementTree as ElementTree
 from tqdm import tqdm
 
 
@@ -38,7 +36,7 @@ def run_3d_decon(timepoint, kernel, niter, algo):
     timepoint[indz, indy, indx] = bkgd_mode + bkgd_std*np.random.randn(len(indz))
     return algo.run(fd_data.Acquisition(data=timepoint, kernel=kernel), niter=niter).data
 
-def run_5d_decon(input_file_str, dat, mdata, psfs, z_spacing, niter, pad_amount, channels):
+def run_5d_decon(input_file_str, dat, mdata, psfs, x_res, y_res, z_spacing, niter, pad_amount, channels):
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # FATAL
     logging.getLogger('tensorflow').setLevel(logging.FATAL)
     print(dat.shape)
@@ -76,5 +74,5 @@ def run_5d_decon(input_file_str, dat, mdata, psfs, z_spacing, niter, pad_amount,
     output_file_str = input_file_str.replace(".tif", suffix)
     mdata['channels'] = channels
 
-    tifffile.imwrite(output_file_str, res.astype(np.uint16), imagej = True, metadata=mdata)
+    tifffile.imwrite(output_file_str, res.astype(np.uint16), imagej = True, metadata=mdata, resolution=(x_res, y_res))
     print('All finished\n')

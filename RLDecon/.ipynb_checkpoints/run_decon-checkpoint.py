@@ -43,12 +43,18 @@ def run_5d_decon(input_file_str, dat, mdata, psfs, x_res, y_res, z_spacing, nite
     data = np.copy(dat) 
     res = np.zeros(data.shape)
 
+    
+
     if len(data.shape) == 3:
         res = np.expand_dims(res, 0)
         data = np.expand_dims(data, 0)
 
+    if len(psfs[0].shape) == 2:
+        kernel488 = get_kernel(psfs[0], z_spacing)
+    else:
+        kernel488 = psfs[0]
+
     
-    kernel488 = get_kernel(psfs[0], z_spacing)
     if channels == 1:
         
         
@@ -59,7 +65,10 @@ def run_5d_decon(input_file_str, dat, mdata, psfs, x_res, y_res, z_spacing, nite
         
     
     if channels == 2:
-        kernel640 = get_kernel(psfs[1], z_spacing)
+        if len(psfs[1].shape) == 2:
+            kernel640 = get_kernel(psfs[1], z_spacing)
+        else:
+            kernel640 = psfs[1]
         
     
     ndim = 3 #data.ndim 
@@ -70,7 +79,7 @@ def run_5d_decon(input_file_str, dat, mdata, psfs, x_res, y_res, z_spacing, nite
         if channels ==2:
             res[i, :, 1] = run_3d_decon(image[:,0], kernel640, niter, algo)
     
-    suffix = f"_scottdecon_niter{niter}_padding{pad_amount}_channels{channels}.tif"
+    suffix = f"flowdecRL_iter{niter}_padding{pad_amount}_channels{channels}.tif"
     output_file_str = input_file_str.replace(".tif", suffix)
     mdata['channels'] = channels
 

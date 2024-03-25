@@ -45,18 +45,19 @@ def choose_image_file(root, default_folder = '../', title_message ='Open an imag
 class MultipleInputFileDialog(simpledialog.Dialog):
     def __init__(self, root, title="Input", defaults=None, **kwargs):
         if defaults is None:
-            defaults = {'image_file': '', 'csv_ch1': '', 'csv_ch2': 'none', 'channels':1}
+            defaults = {'image_file': '', 'psf_ch1': '', 'psf_ch2': 'none', 'channels':1}
         self.root = root
 
         self.defaults = defaults
         self.channel_mode = tk.IntVar(value=defaults['channels'])  # Default to 1 Channel
+        self.psf_mode = tk.StringVar(value = "fitted")  # Default to 1 Channel
         
         super().__init__(root, title=title, **kwargs)
         
 
     def make_layout_flexible(self):
         # Configure the rows and columns to be flexible
-        for i in range(5):  # Assuming you might have up to 4 rows; adjust as necessary
+        for i in range(6):  # Assuming you might have up to 5 rows; adjust as necessary
             self.master.grid_rowconfigure(i, weight=1)
         for j in range(3):  # Assuming up to 3 columns (label, entry, button)
             self.master.grid_columnconfigure(j, weight=1)
@@ -71,13 +72,16 @@ class MultipleInputFileDialog(simpledialog.Dialog):
         tk.Button(self.master, text="Select", command=lambda: self.select_file(default_folder,self.image_file_entry, False)).grid(row=0, column=2)
 
         # Radio buttons for channel selection
-        tk.Radiobutton(self.master, text="1 Channel", variable=self.channel_mode, value=1, command=lambda: self.update_csv_fields()).grid(row=1, column=0, sticky="w")
-        tk.Radiobutton(self.master, text="2 Channels", variable=self.channel_mode, value=2, command=lambda: self.update_csv_fields()).grid(row=1, column=1, sticky="w")
+        tk.Radiobutton(self.master, text="1 Channel", variable=self.channel_mode, value=1, command=lambda: self.update_psf_fields()).grid(row=1, column=0, sticky="w")
+        tk.Radiobutton(self.master, text="2 Channels", variable=self.channel_mode, value=2, command=lambda: self.update_psf_fields()).grid(row=1, column=1, sticky="w")
 
-        # Initially create one CSV entry field; adjust based on mode
-        self.csv_entry_widgets = []
-        self.csv_extra_widgets = []
-        self.update_csv_fields()
+        tk.Radiobutton(self.master, text="Fitted PSF", variable=self.psf_mode, value="fitted", command=lambda: self.update_psf_fields()).grid(row=2, column=0, sticky="w")
+        tk.Radiobutton(self.master, text="Raw PSF", variable=self.psf_mode, value="raw", command=lambda: self.update_psf_fields()).grid(row=2, column=1, sticky="w")
+
+        # Initially create one PSF entry field; adjust based on mode
+        self.psf_entry_widgets = []
+        self.psf_extra_widgets = []
+        self.update_psf_fields()
         # self.make_layout_flexible(master)
 
     def select_file(self,default_folder,  entry_widget, csv):
@@ -86,26 +90,26 @@ class MultipleInputFileDialog(simpledialog.Dialog):
             entry_widget.delete(0, tk.END)
             entry_widget.insert(0, filepath)
 
-    def update_csv_fields(self ):
+    def update_psf_fields(self ):
         # Clear existing CSV fields and secondary widgets
-        for widget in self.csv_entry_widgets:
+        for widget in self.psf_entry_widgets:
             widget.grid_forget()
 
-        for widget in self.csv_extra_widgets:
+        for widget in self.psf_extra_widgets:
             widget.grid_forget()
             
-        self.csv_entry_widgets.clear()
-        self.csv_extra_widgets.clear()
+        self.psf_entry_widgets.clear()
+        self.psf_extra_widgets.clear()
         
         print(self.channel_mode.get())
-        # Depending on the channel mode, create appropriate CSV file fields
-        if self.channel_mode.get() == 1:
-            self.create_csv_field("CSV file:", 2, self.defaults['csv_ch1'])
-        elif self.channel_mode.get() == 2:
-            self.create_csv_field("psf488 CSV file:", 2, self.defaults['csv_ch1'])
-            self.create_csv_field("psf640 CSV file:", 3, self.defaults['csv_ch2'])
+        print(self.psf_mode.get())
+        # Depending on the channel mode, create appropriate PSF file fields
+        
+        self.create_psf_field("Channel 1 PSF file:", 3, self.defaults['psf_ch1'])
+        if self.channel_mode.get() == 2:
+            self.create_psf_field("Channel 2 PSF file:", 4, self.defaults['psf_ch2'])
 
-    def create_csv_field(self, label_text, row, default_value):
+    def create_psf_field(self, label_text, row, default_value):
         # print(f'Creating field at row {row} with default value "{default_value}"')
         label = tk.Label(self.master, text=label_text)
         label.grid(row=row, column=0, sticky="w")
@@ -116,13 +120,13 @@ class MultipleInputFileDialog(simpledialog.Dialog):
         entry.insert(0, str(default_value))
         # print(f'Entry grid info: {entry.grid_info()}')
     
-        button = tk.Button(self.master, text="Select", command=lambda: self.select_file(label_text, entry, True))
+        button = tk.Button(self.master, text="Select", command=lambda: self.select_file(label_text, entry, self.psf_mode.get() == "fitted"))
         button.grid(row=row, column=2)
         # print(f'Button grid info: {button.grid_info()}')
 
-        self.csv_extra_widgets.append(label)
-        self.csv_entry_widgets.append(entry)
-        self.csv_extra_widgets.append(button)
+        self.psf_extra_widgets.append(label)
+        self.psf_entry_widgets.append(entry)
+        self.psf_extra_widgets.append(button)
 
 
     def apply(self):
@@ -132,11 +136,9 @@ class MultipleInputFileDialog(simpledialog.Dialog):
         try:
             self.result = {'image_file': self.image_file_entry.get()}
             self.result['channels'] = self.channel_mode.get()
-            if self.channel_mode.get() == 1:
-                self.result['csv_ch1'] = self.csv_entry_widgets[0].get()
-            elif self.channel_mode.get() == 2:
-                self.result['csv_ch1'] = self.csv_entry_widgets[0].get()
-                self.result['csv_ch2'] = self.csv_entry_widgets[1].get()
+            self.result['psf_ch1'] = self.psf_entry_widgets[0].get()
+            if self.channel_mode.get() == 2:
+                self.result['psf_ch2'] = self.psf_entry_widgets[1].get()
         except ValueError:
             messagebox.showwarning("Invalid input", "Please enter valid file paths.")
             self.result = None
@@ -207,7 +209,7 @@ def get_inputs():
     
     while(not valid):
         try:
-            default_inputs = { 'image_file': 'Z:/Shared243/storal/', 'csv_ch1': 'Z:/Shared243/storal/', 'csv_ch2': 'Z:/Shared243/storal/', 'channels':2}
+            default_inputs = { 'image_file': 'Z:/Shared243/storal/', 'psf_ch1': 'Z:/Shared243/storal/', 'psf_ch2': 'Z:/Shared243/storal/', 'channels':2}
             file_inputs, root = get_multiple_file_inputs(root, "File Inputs", default_inputs)
             if file_inputs is None:
                 print('Cancelled.')
@@ -219,13 +221,23 @@ def get_inputs():
             input_file_str = file_inputs['image_file']
 
             
-            psf_ch1_file_str = file_inputs['csv_ch1']
-            psfs.append(np.genfromtxt(psf_ch1_file_str, delimiter=','))
+            psf_ch1_file_str = file_inputs['psf_ch1']
+            if ".csv" in psf_ch1_file_str:
+                psfs.append(np.genfromtxt(psf_ch1_file_str, delimiter=','))
+            elif ".tif" in psf_ch1_file_str:
+                with tifffile.TiffFile(psf_ch1_file_str) as psf1_tif:
+                    psf_ch1 = psf1_tif.asarray()
+                    psfs.append(psf_ch1)
 
             if channels == 2:
-                psf_ch2_file_str = file_inputs['csv_ch2']
-                psfs.append(np.genfromtxt(psf_ch2_file_str, delimiter=','))
-                
+                psf_ch2_file_str = file_inputs['psf_ch2']
+                if ".csv" in psf_ch2_file_str:
+                    psfs.append(np.genfromtxt(psf_ch2_file_str, delimiter=','))
+                elif ".tif" in psf_ch2_file_str:
+                    with tifffile.TiffFile(psf_ch2_file_str) as psf2_tif:
+                        psf_ch2 = psf2_tif.asarray()
+                        psfs.append(psf_ch2)
+                    
             with tifffile.TiffFile(input_file_str) as tif:
                     if 'ome.tif' in input_file_str:
                         xml_data = tif.ome_metadata

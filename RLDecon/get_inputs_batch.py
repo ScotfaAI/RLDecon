@@ -289,6 +289,13 @@ def get_inputs_batch():
                         
                     dat = tif.asarray()
             valid = True
+            dats = []
+
+            for file_str in input_files:
+                with tifffile.TiffFile(file_str) as tif:
+                     
+                    image_data = tif.asarray()
+                    dats.append(image_data)
             
         except OSError as e:
                 # Handle the error (e.g., log it, inform the user)
@@ -334,6 +341,6 @@ def get_inputs_batch():
         }
     
     root.destroy()
-    return [input_files, dat, mdata, psfs, x_res, y_res, z_spacing, niter, pad_amount, channels]
+    return [input_files, dats, mdata, psfs, x_res, y_res, z_spacing, niter, pad_amount, channels]
 
 

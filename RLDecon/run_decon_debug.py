@@ -36,9 +36,17 @@ def run_3d_decon(timepoint, kernel, niter, algo):
     timepoint[indz, indy, indx] = bkgd_mode + bkgd_std*np.random.randn(len(indz))
     return algo.run(fd_data.Acquisition(data=timepoint, kernel=kernel), niter=niter).data
 
-def run_5d_decon_batch(input_files, dats, mdata, psfs, x_res, y_res, z_spacing, niter, pad_amount, channels):
+def run_decon(input_files, dats, mdata, psfs, x_res, y_res, z_spacing, input_rl, pad_amount, channels, debug_iterations):
+    if debug_iterations:
+        iterations = [x for x in range(1,input_rl+1) if x % 5 == 0]
+        if input_rl % 5 != 0: iterations.append(input_rl)
+    else:
+        iterations = [input_rl]
+        
+
     for (input_file_str, dat) in zip(input_files, dats):
-        run_5d_decon(input_file_str, dat, mdata, psfs, x_res, y_res, z_spacing, niter, pad_amount, channels)
+        for niter in iterations:
+            run_5d_decon(input_file_str, dat, mdata, psfs, x_res, y_res, z_spacing, niter, pad_amount, channels)
 
 
 def run_5d_decon(input_file_str, dat, mdata, psfs, x_res, y_res, z_spacing, niter, pad_amount, channels):

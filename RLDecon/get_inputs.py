@@ -301,6 +301,6 @@ def get_inputs():
         }
     
     root.destroy()
-    return [input_file_str, dat, mdata, psfs, x_res, y_res, z_spacing, niter, pad_amount, channels]
+    return [[input_file_str], [dat], mdata, psfs, x_res, y_res, z_spacing, niter, pad_amount, channels]
 
 

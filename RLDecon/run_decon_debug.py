@@ -92,7 +92,7 @@ def run_5d_decon(input_file_str, dat, mdata, psfs, x_res, y_res, z_spacing, nite
         if channels ==2:
             res[i, :, 1] = run_3d_decon(image[:,0], kernel640, niter, algo)
     
-    suffix = f"flowdecRL_iter{niter}_padding{pad_amount}_channels{channels}.tif"
+    suffix = f"_2024-03-05_MC191_488Ndc80EGFP_4sec_5dayAVGsigma_rl{niter}.tif"
     output_file_str = input_file_str.replace(".tif", suffix)
     mdata['channels'] = channels
 

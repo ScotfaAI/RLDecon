@@ -122,17 +122,24 @@ class MultipleInputFileDialog(simpledialog.Dialog):
                 self.file_listbox.insert(tk.END, file)
 
     def update_psf_fields(self ):
+        print("updatingchannel")
         # Clear existing CSV fields and secondary widgets
         for widget in self.psf_entry_widgets:
+            print(widget)
             widget.grid_forget()
 
+        print("stuck1")
         for widget in self.psf_extra_widgets:
             widget.grid_forget()
             
+        print("stuck2")
         self.psf_entry_widgets.clear()
+        print("stuck3")
         self.psf_extra_widgets.clear()
+        print("stuck4")
         
         print(self.channel_mode.get())
+        print("stuck5")
         print(self.psf_mode.get())
         # Depending on the channel mode, create appropriate PSF file fields
         
@@ -153,11 +160,22 @@ class MultipleInputFileDialog(simpledialog.Dialog):
     
         button = tk.Button(self.master, text="Select", command=lambda: self.select_file(label_text, entry, self.psf_mode.get() == "fitted"))
         button.grid(row=row, column=2)
+
+        decon_checkbox = tk.Checkbutton(self.master, text="Deconvolve").grid(row=row, column=3, sticky="w")
+
+        rl_label = tk.Label(self.master, text="Number of RL iterations:").grid(row=row, column=4, sticky="w")
+        niter_entry = tk.Entry(self.master)
+        niter_entry.grid(row=row, column=5)
+        # niter_entry.insert(0, str(self.defaults['niter']))
+        niter_entry.insert(0, str(30))
         # print(f'Button grid info: {button.grid_info()}')
 
         self.psf_extra_widgets.append(label)
         self.psf_entry_widgets.append(entry)
         self.psf_extra_widgets.append(button)
+        self.psf_entry_widgets.append(decon_checkbox)
+        self.psf_extra_widgets.append(rl_label)
+        self.psf_entry_widgets.append(niter_entry)
 
 
     def apply(self):
@@ -168,6 +186,9 @@ class MultipleInputFileDialog(simpledialog.Dialog):
             # self.result = {'image_file': self.image_file_entry.get()}
             self.result = {'image_file': self.selected_tif_files}
             self.result['channels'] = self.channel_mode.get()
+            for item in self.psf_entry_widgets:
+                print(item.get())
+            
             self.result['psf_ch1'] = self.psf_entry_widgets[0].get()
             if self.channel_mode.get() == 2:
                 self.result['psf_ch2'] = self.psf_entry_widgets[1].get()
